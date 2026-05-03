@@ -18,12 +18,19 @@ export const upsertUser = mutation({
       .first();
 
     if (existing) {
+      const role =
+        args.email.toLowerCase() === SITE_OWNER_EMAIL ? "owner" : (existing.role || "user");
+
       await ctx.db.patch(existing._id, {
         name: args.name,
         email: args.email,
         profileImageUrl: args.profileImageUrl,
         isOnline: true,
         lastSeen: Date.now(),
+        // Add missing fields for old documents
+        role: role,
+        isBanned: existing.isBanned ?? false,
+        contacts: existing.contacts ?? [],
       });
       return existing._id;
     }

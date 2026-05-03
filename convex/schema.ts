@@ -8,12 +8,12 @@ export default defineSchema({
     email: v.string(),
     name: v.string(),
     profileImageUrl: v.optional(v.string()),
-    role: v.union(v.literal("owner"), v.literal("admin"), v.literal("user")),
-    isBanned: v.boolean(),
+    role: v.optional(v.union(v.literal("owner"), v.literal("admin"), v.literal("user"))),
+    isBanned: v.optional(v.boolean()),
     bannedIp: v.optional(v.string()),
-    isOnline: v.boolean(),
-    lastSeen: v.number(),
-    contacts: v.array(v.string()), // array of clerkIds
+    isOnline: v.optional(v.boolean()),
+    lastSeen: v.optional(v.number()),
+    contacts: v.optional(v.array(v.string())), // array of clerkIds
   })
     .index("by_clerkId", ["clerkId"])
     .index("by_email", ["email"])
