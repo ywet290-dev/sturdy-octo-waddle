@@ -29,39 +29,98 @@ export const getPosts = query({
 export const getPopularPosts = query({
   args: {},
   handler: async (ctx) => {
-    return await ctx.db.query("posts").withIndex("by_upvotes").order("desc").take(10);
+    return await ctx.db
+      .query("posts")
+      .withIndex("by_upvotes")
+      .order("desc")
+      .take(10);
   },
 });
 
 export const searchPosts = query({
   args: { query: v.string() },
   handler: async (ctx, args) => {
-    // Basic search filtering in memory since Convex text search is setup differently,
-    // but for simplicity we will filter here.
     const allPosts = await ctx.db.query("posts").order("desc").collect();
     if (!args.query) return allPosts;
     const lowerQuery = args.query.toLowerCase();
-    return allPosts.filter(post => 
-      post.title.toLowerCase().includes(lowerQuery) || 
-      post.text.toLowerCase().includes(lowerQuery)
+    return allPosts.filter(
+      (post) =>
+        post.title.toLowerCase().includes(lowerQuery) ||
+        post.text.toLowerCase().includes(lowerQuery)
     );
   },
 });
 
-export const upvotePost = mutation({
-  args: { id: v.id("posts") },
+// Vote on a post — each user can only have 1 vote (up or down), toggleable
+export const votePost = mutation({
+  args: {
+    postId: v.id("posts"),
+    userId: v.string(),
+    voteType: v.union(v.literal("up"), v.literal("down")),
+  },
   handler: async (ctx, args) => {
-    const post = await ctx.db.get(args.id);
+    const post = await ctx.db.get(args.postId);
     if (!post) throw new Error("Post not found");
-    await ctx.db.patch(args.id, { upvotes: post.upvotes + 1 });
+
+    // Check if user already voted on this post
+    const existingVote = await ctx.db
+      .query("votes")
+      .withIndex("by_user_target", (q) =>
+        q.eq("userId", args.userId).eq("targetId", args.postId as string)
+      )
+      .first();
+
+    if (existingVote) {
+      if (existingVote.voteType === args.voteType) {
+        // Same vote again → remove the vote (toggle off)
+        await ctx.db.delete(existingVote._id);
+        if (args.voteType === "up") {
+          await ctx.db.patch(args.postId, { upvotes: post.upvotes - 1 });
+        } else {
+          await ctx.db.patch(args.postId, { downvotes: post.downvotes - 1 });
+        }
+        return "removed";
+      } else {
+        // Switch vote direction
+        await ctx.db.patch(existingVote._id, { voteType: args.voteType });
+        if (args.voteType === "up") {
+          await ctx.db.patch(args.postId, {
+            upvotes: post.upvotes + 1,
+            downvotes: post.downvotes - 1,
+          });
+        } else {
+          await ctx.db.patch(args.postId, {
+            upvotes: post.upvotes - 1,
+            downvotes: post.downvotes + 1,
+          });
+        }
+        return "switched";
+      }
+    } else {
+      // New vote
+      await ctx.db.insert("votes", {
+        userId: args.userId,
+        targetId: args.postId as string,
+        targetType: "post",
+        voteType: args.voteType,
+      });
+      if (args.voteType === "up") {
+        await ctx.db.patch(args.postId, { upvotes: post.upvotes + 1 });
+      } else {
+        await ctx.db.patch(args.postId, { downvotes: post.downvotes + 1 });
+      }
+      return "voted";
+    }
   },
 });
 
-export const downvotePost = mutation({
-  args: { id: v.id("posts") },
+// Get the current user's vote on a specific post
+export const getUserVotes = query({
+  args: { userId: v.string() },
   handler: async (ctx, args) => {
-    const post = await ctx.db.get(args.id);
-    if (!post) throw new Error("Post not found");
-    await ctx.db.patch(args.id, { downvotes: post.downvotes + 1 });
+    return await ctx.db
+      .query("votes")
+      .filter((q) => q.eq(q.field("userId"), args.userId))
+      .collect();
   },
 });
