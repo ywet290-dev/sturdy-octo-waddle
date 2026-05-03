@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { UserButton, useUser } from "@clerk/nextjs";
 import { useQuery, useMutation } from "convex/react";
-import { api } from "../../../convex/_generated/api";
+import { api } from "../../convex/_generated/api";
 import { useEffect } from "react";
 import {
   Home,
