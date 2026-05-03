@@ -23,7 +23,7 @@ export default function HomePage() {
           <Link href="/search" className="px-4 py-2 bg-zinc-200 hover:bg-zinc-300 dark:bg-zinc-800 dark:hover:bg-zinc-700 rounded-lg font-medium transition-colors">
             Search
           </Link>
-          <UserButton afterSignOutUrl="/login" />
+          <UserButton />
         </div>
       </nav>
 
