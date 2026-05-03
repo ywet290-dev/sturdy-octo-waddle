@@ -141,23 +141,16 @@ export const editPost = mutation({
   },
 });
 
-// Delete a post (author OR admin/owner)
+// Delete a post (author only)
 export const deletePost = mutation({
   args: { postId: v.id("posts"), userId: v.string() },
   handler: async (ctx, args) => {
     const post = await ctx.db.get(args.postId);
     if (!post) throw new Error("Post not found");
 
-    // Check if user is the author or an admin
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_clerkId", (q) => q.eq("clerkId", args.userId))
-      .first();
-
     const isAuthor = post.authorId === args.userId;
-    const isAdmin = user?.role === "owner" || user?.role === "admin";
 
-    if (!isAuthor && !isAdmin) throw new Error("Unauthorized");
+    if (!isAuthor) throw new Error("Unauthorized");
 
     // Delete related comments
     const comments = await ctx.db

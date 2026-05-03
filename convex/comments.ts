@@ -110,22 +110,16 @@ export const editComment = mutation({
   },
 });
 
-// Delete comment (author or admin/owner)
+// Delete comment (author only)
 export const deleteComment = mutation({
   args: { commentId: v.id("comments"), userId: v.string() },
   handler: async (ctx, args) => {
     const comment = await ctx.db.get(args.commentId);
     if (!comment) throw new Error("Comment not found");
 
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_clerkId", (q) => q.eq("clerkId", args.userId))
-      .first();
-
     const isAuthor = comment.authorId === args.userId;
-    const isAdmin = user?.role === "owner" || user?.role === "admin";
 
-    if (!isAuthor && !isAdmin) throw new Error("Unauthorized");
+    if (!isAuthor) throw new Error("Unauthorized");
     await ctx.db.delete(args.commentId);
   },
 });

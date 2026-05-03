@@ -25,7 +25,6 @@ function CommentThread({
   userId: string;
   userName: string;
   userVotes: Doc<"votes">[];
-  isAdmin: boolean;
   depth: number;
 }) {
   const [showReply, setShowReply] = useState(false);
@@ -115,7 +114,7 @@ function CommentThread({
                   <Pencil size={12} />
                 </button>
               )}
-              {(isAuthor || isAdmin) && (
+              {isAuthor && (
                 <button
                   onClick={() => {
                     if (confirm("Delete this comment?")) {
@@ -190,7 +189,6 @@ function CommentThread({
           userId={userId}
           userName={userName}
           userVotes={userVotes}
-          isAdmin={isAdmin}
           depth={depth + 1}
         />
       ))}
@@ -223,7 +221,6 @@ function PostCard({
   userId: string;
   userName: string;
   userVotes: Doc<"votes">[];
-  isAdmin: boolean;
 }) {
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState("");
@@ -318,7 +315,7 @@ function PostCard({
                   <Pencil size={16} />
                 </button>
               )}
-              {(isAuthor || isAdmin) && (
+              {isAuthor && (
                 <button
                   onClick={() => {
                     if (confirm("Delete this post?")) {
@@ -417,7 +414,6 @@ function PostCard({
                 userId={userId}
                 userName={userName}
                 userVotes={userVotes}
-                isAdmin={isAdmin}
                 depth={0}
               />
             ))
@@ -437,14 +433,9 @@ export default function HomePage() {
     api.posts.getUserVotes,
     user ? { userId: user.id } : "skip"
   );
-  const dbUser = useQuery(
-    api.users.getUser,
-    user ? { clerkId: user.id } : "skip"
-  );
 
   const userId = user?.id ?? "";
   const userName = user?.fullName || user?.username || "Anonymous";
-  const isAdmin = dbUser?.role === "owner" || dbUser?.role === "admin";
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
@@ -475,7 +466,6 @@ export default function HomePage() {
                 userId={userId}
                 userName={userName}
                 userVotes={userVotes ?? []}
-                isAdmin={isAdmin}
               />
             ))
           )}

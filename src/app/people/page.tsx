@@ -193,21 +193,6 @@ function UserCard({
       <div className="flex-1">
         <div className="flex items-center gap-2">
           <span className="font-bold">{profile.name}</span>
-          {profile.role === "owner" && (
-            <span className="text-[10px] bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400 px-1.5 py-0.5 rounded-full font-bold">
-              OWNER
-            </span>
-          )}
-          {profile.role === "admin" && (
-            <span className="text-[10px] bg-purple-100 text-purple-600 dark:bg-purple-500/20 dark:text-purple-400 px-1.5 py-0.5 rounded-full font-bold">
-              ADMIN
-            </span>
-          )}
-          {profile.isBanned && (
-            <span className="text-[10px] bg-zinc-200 text-zinc-500 px-1.5 py-0.5 rounded-full font-bold">
-              BANNED
-            </span>
-          )}
         </div>
         <span className="text-sm text-zinc-500">{profile.email}</span>
       </div>

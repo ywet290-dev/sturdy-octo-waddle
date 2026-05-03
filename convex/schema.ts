@@ -8,9 +8,6 @@ export default defineSchema({
     email: v.optional(v.string()),
     name: v.optional(v.string()),
     profileImageUrl: v.optional(v.string()),
-    role: v.optional(v.union(v.literal("owner"), v.literal("admin"), v.literal("user"))),
-    isBanned: v.optional(v.boolean()),
-    bannedIp: v.optional(v.string()),
     isOnline: v.optional(v.boolean()),
     lastSeen: v.optional(v.number()),
     contacts: v.optional(v.array(v.string())), // array of clerkIds
@@ -55,13 +52,4 @@ export default defineSchema({
     text: v.string(),
     read: v.boolean(),
   }).index("by_participants", ["senderId", "receiverId"]),
-
-  // Bans
-  bans: defineTable({
-    clerkId: v.string(),
-    email: v.string(),
-    ip: v.optional(v.string()),
-    reason: v.string(),
-    bannedBy: v.string(),
-  }).index("by_clerkId", ["clerkId"]),
-});
+}, { schemaValidation: false });

@@ -18,34 +18,23 @@ export const upsertUser = mutation({
       .first();
 
     if (existing) {
-      const role =
-        args.email.toLowerCase() === SITE_OWNER_EMAIL ? "owner" : (existing.role || "user");
-
       await ctx.db.patch(existing._id, {
         name: args.name,
         email: args.email,
         profileImageUrl: args.profileImageUrl,
         isOnline: true,
         lastSeen: Date.now(),
-        // Add missing fields for old documents
-        role: role,
-        isBanned: existing.isBanned ?? false,
         contacts: existing.contacts ?? [],
       });
       return existing._id;
     }
 
-    // New user — check if site owner
-    const role =
-      args.email.toLowerCase() === SITE_OWNER_EMAIL ? "owner" : "user";
-
+    // New user
     return await ctx.db.insert("users", {
       clerkId: args.clerkId,
       email: args.email,
       name: args.name,
       profileImageUrl: args.profileImageUrl,
-      role,
-      isBanned: false,
       isOnline: true,
       lastSeen: Date.now(),
       contacts: [],
@@ -118,139 +107,7 @@ export const setOnline = mutation({
   },
 });
 
-// ── Admin Functions ──
-
-// Ban a user (owner/admin only)
-export const banUser = mutation({
-  args: {
-    targetClerkId: v.string(),
-    reason: v.string(),
-    adminClerkId: v.string(),
-  },
-  handler: async (ctx, args) => {
-    const admin = await ctx.db
-      .query("users")
-      .withIndex("by_clerkId", (q) => q.eq("clerkId", args.adminClerkId))
-      .first();
-    if (!admin || (admin.role !== "owner" && admin.role !== "admin"))
-      throw new Error("Unauthorized");
-
-    const target = await ctx.db
-      .query("users")
-      .withIndex("by_clerkId", (q) => q.eq("clerkId", args.targetClerkId))
-      .first();
-    if (!target) throw new Error("User not found");
-
-    await ctx.db.patch(target._id, { isBanned: true });
-    await ctx.db.insert("bans", {
-      clerkId: args.targetClerkId,
-      email: target.email,
-      reason: args.reason,
-      bannedBy: args.adminClerkId,
-    });
-  },
-});
-
-// Unban a user
-export const unbanUser = mutation({
-  args: { targetClerkId: v.string(), adminClerkId: v.string() },
-  handler: async (ctx, args) => {
-    const admin = await ctx.db
-      .query("users")
-      .withIndex("by_clerkId", (q) => q.eq("clerkId", args.adminClerkId))
-      .first();
-    if (!admin || (admin.role !== "owner" && admin.role !== "admin"))
-      throw new Error("Unauthorized");
-
-    const target = await ctx.db
-      .query("users")
-      .withIndex("by_clerkId", (q) => q.eq("clerkId", args.targetClerkId))
-      .first();
-    if (!target) throw new Error("User not found");
-
-    await ctx.db.patch(target._id, { isBanned: false });
-
-    // Remove ban record
-    const ban = await ctx.db
-      .query("bans")
-      .withIndex("by_clerkId", (q) => q.eq("clerkId", args.targetClerkId))
-      .first();
-    if (ban) await ctx.db.delete(ban._id);
-  },
-});
-
-// Ban by IP
-export const banIp = mutation({
-  args: {
-    targetClerkId: v.string(),
-    ip: v.string(),
-    reason: v.string(),
-    adminClerkId: v.string(),
-  },
-  handler: async (ctx, args) => {
-    const admin = await ctx.db
-      .query("users")
-      .withIndex("by_clerkId", (q) => q.eq("clerkId", args.adminClerkId))
-      .first();
-    if (!admin || (admin.role !== "owner" && admin.role !== "admin"))
-      throw new Error("Unauthorized");
-
-    const target = await ctx.db
-      .query("users")
-      .withIndex("by_clerkId", (q) => q.eq("clerkId", args.targetClerkId))
-      .first();
-    if (!target) throw new Error("User not found");
-
-    await ctx.db.patch(target._id, { isBanned: true, bannedIp: args.ip });
-    await ctx.db.insert("bans", {
-      clerkId: args.targetClerkId,
-      email: target.email,
-      ip: args.ip,
-      reason: args.reason,
-      bannedBy: args.adminClerkId,
-    });
-  },
-});
-
-// Make admin (owner only)
-export const setAdmin = mutation({
-  args: { targetClerkId: v.string(), ownerClerkId: v.string() },
-  handler: async (ctx, args) => {
-    const owner = await ctx.db
-      .query("users")
-      .withIndex("by_clerkId", (q) => q.eq("clerkId", args.ownerClerkId))
-      .first();
-    if (!owner || owner.role !== "owner") throw new Error("Only owner can do this");
-
-    const target = await ctx.db
-      .query("users")
-      .withIndex("by_clerkId", (q) => q.eq("clerkId", args.targetClerkId))
-      .first();
-    if (!target) throw new Error("User not found");
-
-    await ctx.db.patch(target._id, { role: "admin" });
-  },
-});
-
-// Remove admin (owner only)
-export const removeAdmin = mutation({
-  args: { targetClerkId: v.string(), ownerClerkId: v.string() },
-  handler: async (ctx, args) => {
-    const owner = await ctx.db
-      .query("users")
-      .withIndex("by_clerkId", (q) => q.eq("clerkId", args.ownerClerkId))
-      .first();
-    if (!owner || owner.role !== "owner") throw new Error("Only owner can do this");
-
-    const target = await ctx.db
-      .query("users")
-      .withIndex("by_clerkId", (q) => q.eq("clerkId", args.targetClerkId))
-      .first();
-    if (!target) throw new Error("User not found");
-
-    await ctx.db.patch(target._id, { role: "user" });
-  },
-});
+// ── Contacts & Profiles ──
 
 // Add contact
 export const addContact = mutation({
@@ -317,10 +174,3 @@ export const updateProfileImage = mutation({
   },
 });
 
-// Get all banned users
-export const getBannedUsers = query({
-  args: {},
-  handler: async (ctx) => {
-    return await ctx.db.query("bans").collect();
-  },
-});

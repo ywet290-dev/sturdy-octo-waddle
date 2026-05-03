@@ -11,7 +11,6 @@ import {
   Search,
   MessageCircle,
   Users,
-  Shield,
 } from "lucide-react";
 
 export default function TopBar() {
@@ -42,8 +41,6 @@ export default function TopBar() {
       });
     }
   }, [user, upsertUser]);
-
-  const isAdmin = dbUser?.role === "owner" || dbUser?.role === "admin";
 
   return (
     <nav className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-4 md:px-6 py-3 flex justify-between items-center sticky top-0 z-50">
@@ -95,15 +92,6 @@ export default function TopBar() {
         >
           <Users size={20} />
         </Link>
-        {isAdmin && (
-          <Link
-            href="/admin"
-            className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors text-red-500"
-            title="Admin Panel"
-          >
-            <Shield size={20} />
-          </Link>
-        )}
         <UserButton />
       </div>
     </nav>
