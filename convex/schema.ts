@@ -4,9 +4,9 @@ import { v } from "convex/values";
 export default defineSchema({
   // User profiles
   users: defineTable({
-    clerkId: v.string(),
+    clerkId: v.optional(v.string()),
     email: v.string(),
-    name: v.string(),
+    name: v.optional(v.string()),
     profileImageUrl: v.optional(v.string()),
     role: v.optional(v.union(v.literal("owner"), v.literal("admin"), v.literal("user"))),
     isBanned: v.optional(v.boolean()),
