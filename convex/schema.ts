@@ -5,7 +5,7 @@ export default defineSchema({
   // User profiles
   users: defineTable({
     clerkId: v.optional(v.string()),
-    email: v.string(),
+    email: v.optional(v.string()),
     name: v.optional(v.string()),
     profileImageUrl: v.optional(v.string()),
     role: v.optional(v.union(v.literal("owner"), v.literal("admin"), v.literal("user"))),
