@@ -135,6 +135,19 @@ function CommentThread({
   );
 }
 
+// ── Post Image Component ──
+function PostImage({ imageId }: { imageId: Id<"_storage"> }) {
+  const imageUrl = useQuery(api.files.getImageUrl, { storageId: imageId });
+  if (!imageUrl) return null;
+  return (
+    <img
+      src={imageUrl}
+      alt="Post image"
+      className="w-full max-h-96 object-cover rounded-lg mb-4"
+    />
+  );
+}
+
 // ── Post Card Component ──
 function PostCard({
   post,
@@ -203,6 +216,7 @@ function PostCard({
         {/* Content */}
         <div className="flex-1">
           <h3 className="text-xl font-bold mb-2">{post.title}</h3>
+          {post.imageId && <PostImage imageId={post.imageId} />}
           <p className="text-zinc-600 dark:text-zinc-400 mb-4 line-clamp-3">
             {post.text}
           </p>
