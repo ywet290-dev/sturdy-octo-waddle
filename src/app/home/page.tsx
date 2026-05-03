@@ -2,6 +2,7 @@
 
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
+import { Doc } from "../../../convex/_generated/dataModel";
 import { ArrowUp, ArrowDown, MessageSquare } from "lucide-react";
 import Link from "next/link";
 import { UserButton } from "@clerk/nextjs";
@@ -40,7 +41,7 @@ export default function HomePage() {
           ) : posts.length === 0 ? (
             <p className="text-zinc-500">No posts yet. Be the first to create one!</p>
           ) : (
-            posts.map((post) => (
+            posts.map((post: Doc<"posts">) => (
               <div key={post._id} className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-6 shadow-sm hover:shadow-md transition-shadow flex gap-4">
                 {/* Voting column */}
                 <div className="flex flex-col items-center gap-1">
@@ -92,7 +93,7 @@ export default function HomePage() {
               ) : popularPosts.length === 0 ? (
                 <p className="text-sm text-zinc-500">No popular posts yet.</p>
               ) : (
-                popularPosts.map((post) => (
+                popularPosts.map((post: Doc<"posts">) => (
                   <div key={post._id} className="border-b border-zinc-100 dark:border-zinc-800 last:border-0 pb-3 last:pb-0">
                     <h4 className="font-medium text-sm line-clamp-2 hover:text-blue-500 cursor-pointer transition-colors">
                       {post.title}

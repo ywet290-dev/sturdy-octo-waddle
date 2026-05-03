@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
+import { Doc } from "../../../convex/_generated/dataModel";
 import { Search, ArrowUp, ArrowDown } from "lucide-react";
 import Link from "next/link";
 import { UserButton } from "@clerk/nextjs";
@@ -56,7 +57,7 @@ export default function SearchPage() {
               No results found for "{searchQuery}". Try a different keyword.
             </div>
           ) : (
-            results.map((post) => (
+            results.map((post: Doc<"posts">) => (
               <div key={post._id} className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-6 flex gap-4">
                 <div className="flex flex-col items-center gap-1">
                   <span className="text-zinc-500"><ArrowUp size={20} /></span>
