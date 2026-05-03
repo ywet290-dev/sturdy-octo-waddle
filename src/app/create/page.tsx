@@ -6,6 +6,7 @@ import { api } from "../../../convex/_generated/api";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { UploadCloud, Loader2 } from "lucide-react";
+import TopBar from "@/components/TopBar";
 
 export default function CreatePostPage() {
   const { user, isLoaded } = useUser();
@@ -60,8 +61,10 @@ export default function CreatePostPage() {
   if (!isLoaded) return null;
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 p-6 flex justify-center items-center">
-      <div className="w-full max-w-2xl bg-white dark:bg-zinc-900 rounded-2xl shadow-xl border border-zinc-200 dark:border-zinc-800 p-8">
+    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
+      <TopBar />
+      <div className="p-6 flex justify-center items-center mt-8">
+        <div className="w-full max-w-2xl bg-white dark:bg-zinc-900 rounded-2xl shadow-xl border border-zinc-200 dark:border-zinc-800 p-8">
         <h1 className="text-3xl font-bold mb-6">Create a Post</h1>
         
         <form onSubmit={handleSubmit} className="space-y-6">

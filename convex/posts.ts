@@ -124,3 +124,50 @@ export const getUserVotes = query({
       .collect();
   },
 });
+
+// Edit a post (only the author can edit)
+export const editPost = mutation({
+  args: {
+    postId: v.id("posts"),
+    title: v.string(),
+    text: v.string(),
+    userId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const post = await ctx.db.get(args.postId);
+    if (!post) throw new Error("Post not found");
+    if (post.authorId !== args.userId) throw new Error("Unauthorized");
+    await ctx.db.patch(args.postId, { title: args.title, text: args.text });
+  },
+});
+
+// Delete a post (author OR admin/owner)
+export const deletePost = mutation({
+  args: { postId: v.id("posts"), userId: v.string() },
+  handler: async (ctx, args) => {
+    const post = await ctx.db.get(args.postId);
+    if (!post) throw new Error("Post not found");
+
+    // Check if user is the author or an admin
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerkId", (q) => q.eq("clerkId", args.userId))
+      .first();
+
+    const isAuthor = post.authorId === args.userId;
+    const isAdmin = user?.role === "owner" || user?.role === "admin";
+
+    if (!isAuthor && !isAdmin) throw new Error("Unauthorized");
+
+    // Delete related comments
+    const comments = await ctx.db
+      .query("comments")
+      .withIndex("by_post", (q) => q.eq("postId", args.postId))
+      .collect();
+    for (const c of comments) {
+      await ctx.db.delete(c._id);
+    }
+
+    await ctx.db.delete(args.postId);
+  },
+});

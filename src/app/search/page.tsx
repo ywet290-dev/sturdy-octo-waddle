@@ -5,29 +5,15 @@ import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { Doc } from "../../../convex/_generated/dataModel";
 import { Search, ArrowUp, ArrowDown } from "lucide-react";
-import Link from "next/link";
-import { UserButton } from "@clerk/nextjs";
+import TopBar from "@/components/TopBar";
 
 export default function SearchPage() {
   const [searchQuery, setSearchQuery] = useState("");
-  // We debounce visually or just let Convex re-render since it's fast
   const results = useQuery(api.posts.searchPosts, { query: searchQuery });
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
-      <nav className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-6 py-4 flex justify-between items-center sticky top-0 z-10">
-        <div className="flex items-center gap-4">
-          <Link href="/home" className="text-2xl font-bold tracking-tight hover:opacity-80 transition-opacity">
-            Forum App
-          </Link>
-        </div>
-        <div className="flex items-center gap-4">
-          <Link href="/create" className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors">
-            Create Post
-          </Link>
-          <UserButton />
-        </div>
-      </nav>
+      <TopBar />
 
       <main className="max-w-4xl mx-auto p-6 space-y-8 mt-8">
         <div className="relative">

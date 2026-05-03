@@ -4,9 +4,9 @@ import { useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { Doc, Id } from "../../../convex/_generated/dataModel";
-import { ArrowUp, ArrowDown, MessageSquare, Send } from "lucide-react";
-import Link from "next/link";
-import { UserButton, useUser } from "@clerk/nextjs";
+import { ArrowUp, ArrowDown, MessageSquare, Send, Trash2, Pencil } from "lucide-react";
+import { useUser } from "@clerk/nextjs";
+import TopBar from "@/components/TopBar";
 
 // ── Nested Comment Component ──
 function CommentThread({
@@ -16,6 +16,7 @@ function CommentThread({
   userId,
   userName,
   userVotes,
+  isAdmin,
   depth,
 }: {
   comment: Doc<"comments">;
@@ -24,12 +25,18 @@ function CommentThread({
   userId: string;
   userName: string;
   userVotes: Doc<"votes">[];
+  isAdmin: boolean;
   depth: number;
 }) {
   const [showReply, setShowReply] = useState(false);
   const [replyText, setReplyText] = useState("");
+  const [isEditing, setIsEditing] = useState(false);
+  const [editText, setEditText] = useState(comment.text);
+  
   const createComment = useMutation(api.comments.createComment);
   const voteComment = useMutation(api.comments.voteComment);
+  const deleteComment = useMutation(api.comments.deleteComment);
+  const editComment = useMutation(api.comments.editComment);
 
   const childComments = allComments.filter(
     (c) => c.parentCommentId === comment._id
@@ -39,6 +46,7 @@ function CommentThread({
     (v) => v.targetId === (comment._id as string)
   );
   const score = comment.upvotes - comment.downvotes;
+  const isAuthor = comment.authorId === userId;
 
   const handleReply = async () => {
     if (!replyText.trim()) return;
@@ -51,6 +59,16 @@ function CommentThread({
     });
     setReplyText("");
     setShowReply(false);
+  };
+
+  const handleEdit = async () => {
+    if (!editText.trim()) return;
+    await editComment({
+      commentId: comment._id,
+      text: editText,
+      userId,
+    });
+    setIsEditing(false);
   };
 
   return (
@@ -84,12 +102,56 @@ function CommentThread({
 
         {/* Comment content */}
         <div className="flex-1">
-          <p className="text-xs text-zinc-500 mb-1 font-medium">
-            {comment.authorName}
-          </p>
-          <p className="text-sm text-zinc-800 dark:text-zinc-200">
-            {comment.text}
-          </p>
+          <div className="flex justify-between items-start">
+            <p className="text-xs text-zinc-500 mb-1 font-medium">
+              {comment.authorName}
+            </p>
+            <div className="flex gap-2">
+              {isAuthor && (
+                <button
+                  onClick={() => setIsEditing(!isEditing)}
+                  className="text-zinc-400 hover:text-blue-500 transition-colors"
+                >
+                  <Pencil size={12} />
+                </button>
+              )}
+              {(isAuthor || isAdmin) && (
+                <button
+                  onClick={() => {
+                    if (confirm("Delete this comment?")) {
+                      deleteComment({ commentId: comment._id, userId });
+                    }
+                  }}
+                  className="text-zinc-400 hover:text-red-500 transition-colors"
+                >
+                  <Trash2 size={12} />
+                </button>
+              )}
+            </div>
+          </div>
+          
+          {isEditing ? (
+            <div className="flex gap-2 mt-1">
+              <input
+                type="text"
+                value={editText}
+                onChange={(e) => setEditText(e.target.value)}
+                className="flex-1 text-sm px-3 py-1.5 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent outline-none focus:border-blue-500 transition-colors"
+                onKeyDown={(e) => e.key === "Enter" && handleEdit()}
+              />
+              <button
+                onClick={handleEdit}
+                className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs transition-colors"
+              >
+                Save
+              </button>
+            </div>
+          ) : (
+            <p className="text-sm text-zinc-800 dark:text-zinc-200">
+              {comment.text}
+            </p>
+          )}
+
           <button
             onClick={() => setShowReply(!showReply)}
             className="text-xs text-zinc-500 hover:text-blue-500 mt-1 flex items-center gap-1 transition-colors"
@@ -128,6 +190,7 @@ function CommentThread({
           userId={userId}
           userName={userName}
           userVotes={userVotes}
+          isAdmin={isAdmin}
           depth={depth + 1}
         />
       ))}
@@ -154,16 +217,23 @@ function PostCard({
   userId,
   userName,
   userVotes,
+  isAdmin,
 }: {
   post: Doc<"posts">;
   userId: string;
   userName: string;
   userVotes: Doc<"votes">[];
+  isAdmin: boolean;
 }) {
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState("");
+  const [isEditing, setIsEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState(post.title);
+  const [editText, setEditText] = useState(post.text);
 
   const votePost = useMutation(api.posts.votePost);
+  const deletePost = useMutation(api.posts.deletePost);
+  const editPost = useMutation(api.posts.editPost);
   const createComment = useMutation(api.comments.createComment);
   const comments = useQuery(
     api.comments.getCommentsForPost,
@@ -174,6 +244,7 @@ function PostCard({
     (v) => v.targetId === (post._id as string)
   );
   const score = post.upvotes - post.downvotes;
+  const isAuthor = post.authorId === userId;
 
   // Get only top-level comments (no parent)
   const topLevelComments = comments?.filter((c) => !c.parentCommentId) ?? [];
@@ -187,6 +258,17 @@ function PostCard({
       authorName: userName,
     });
     setCommentText("");
+  };
+
+  const handleEdit = async () => {
+    if (!editTitle.trim() || !editText.trim()) return;
+    await editPost({
+      postId: post._id,
+      title: editTitle,
+      text: editText,
+      userId,
+    });
+    setIsEditing(false);
   };
 
   return (
@@ -215,11 +297,71 @@ function PostCard({
 
         {/* Content */}
         <div className="flex-1">
-          <h3 className="text-xl font-bold mb-2">{post.title}</h3>
+          <div className="flex justify-between items-start mb-2">
+            {isEditing ? (
+              <input
+                type="text"
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+                className="text-xl font-bold w-full bg-transparent border-b border-zinc-300 dark:border-zinc-700 outline-none focus:border-blue-500 transition-colors"
+              />
+            ) : (
+              <h3 className="text-xl font-bold">{post.title}</h3>
+            )}
+            
+            <div className="flex gap-2 ml-4">
+              {isAuthor && (
+                <button
+                  onClick={() => setIsEditing(!isEditing)}
+                  className="p-1 text-zinc-400 hover:text-blue-500 transition-colors"
+                >
+                  <Pencil size={16} />
+                </button>
+              )}
+              {(isAuthor || isAdmin) && (
+                <button
+                  onClick={() => {
+                    if (confirm("Delete this post?")) {
+                      deletePost({ postId: post._id, userId });
+                    }
+                  }}
+                  className="p-1 text-zinc-400 hover:text-red-500 transition-colors"
+                >
+                  <Trash2 size={16} />
+                </button>
+              )}
+            </div>
+          </div>
+          
           {post.imageId && <PostImage imageId={post.imageId} />}
-          <p className="text-zinc-600 dark:text-zinc-400 mb-4 line-clamp-3">
-            {post.text}
-          </p>
+          
+          {isEditing ? (
+            <div className="space-y-3 mb-4">
+              <textarea
+                value={editText}
+                onChange={(e) => setEditText(e.target.value)}
+                className="w-full min-h-[100px] p-3 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent outline-none focus:border-blue-500 transition-colors resize-y"
+              />
+              <div className="flex justify-end gap-2">
+                <button
+                  onClick={() => setIsEditing(false)}
+                  className="px-4 py-2 text-sm text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleEdit}
+                  className="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </div>
+          ) : (
+            <p className="text-zinc-600 dark:text-zinc-400 mb-4 whitespace-pre-wrap">
+              {post.text}
+            </p>
+          )}
 
           <div className="flex items-center gap-4 text-sm text-zinc-500">
             <span>Posted by {post.authorName}</span>
@@ -275,6 +417,7 @@ function PostCard({
                 userId={userId}
                 userName={userName}
                 userVotes={userVotes}
+                isAdmin={isAdmin}
                 depth={0}
               />
             ))
@@ -294,33 +437,18 @@ export default function HomePage() {
     api.posts.getUserVotes,
     user ? { userId: user.id } : "skip"
   );
+  const dbUser = useQuery(
+    api.users.getUser,
+    user ? { clerkId: user.id } : "skip"
+  );
 
   const userId = user?.id ?? "";
-  const userName =
-    user?.fullName || user?.username || "Anonymous";
+  const userName = user?.fullName || user?.username || "Anonymous";
+  const isAdmin = dbUser?.role === "owner" || dbUser?.role === "admin";
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
-      <nav className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-6 py-4 flex justify-between items-center sticky top-0 z-10">
-        <Link href="/home" className="text-2xl font-bold tracking-tight">
-          Forum App
-        </Link>
-        <div className="flex items-center gap-4">
-          <Link
-            href="/create"
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
-          >
-            Create Post
-          </Link>
-          <Link
-            href="/search"
-            className="px-4 py-2 bg-zinc-200 hover:bg-zinc-300 dark:bg-zinc-800 dark:hover:bg-zinc-700 rounded-lg font-medium transition-colors"
-          >
-            Search
-          </Link>
-          <UserButton />
-        </div>
-      </nav>
+      <TopBar />
 
       <main className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 p-6">
         {/* Discover Section */}
@@ -347,6 +475,7 @@ export default function HomePage() {
                 userId={userId}
                 userName={userName}
                 userVotes={userVotes ?? []}
+                isAdmin={isAdmin}
               />
             ))
           )}
