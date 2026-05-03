@@ -89,7 +89,7 @@ export default function MessagesPage() {
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      convo.partnerName[0]?.toUpperCase()
+                      convo.partnerName?.[0]?.toUpperCase() || "?"
                     )}
                   </div>
                   {convo.partnerOnline && (
@@ -99,7 +99,7 @@ export default function MessagesPage() {
                 <div className="flex-1 min-w-0">
                   <div className="flex justify-between items-center">
                     <span className="font-medium text-sm truncate">
-                      {convo.partnerName}
+                      {convo.partnerName || "Unknown User"}
                     </span>
                     {convo.unreadCount > 0 && (
                       <span className="bg-blue-600 text-white text-[10px] px-1.5 py-0.5 rounded-full">
@@ -139,7 +139,7 @@ export default function MessagesPage() {
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      selectedConvo?.partnerName[0]?.toUpperCase()
+                      selectedConvo?.partnerName?.[0]?.toUpperCase() || "?"
                     )}
                   </div>
                   {selectedConvo?.partnerOnline && (
@@ -148,7 +148,7 @@ export default function MessagesPage() {
                 </div>
                 <div>
                   <h3 className="font-bold text-sm">
-                    {selectedConvo?.partnerName}
+                    {selectedConvo?.partnerName || "Unknown User"}
                   </h3>
                   <p className="text-xs text-zinc-500">
                     {selectedConvo?.partnerOnline ? "Online" : "Offline"}

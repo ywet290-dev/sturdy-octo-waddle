@@ -82,10 +82,10 @@ export default function PeoplePage() {
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        u.name[0]?.toUpperCase()
+                        u.name?.[0]?.toUpperCase() || "?"
                       )}
                     </div>
-                    <span className="text-sm font-medium">{u.name}</span>
+                    <span className="text-sm font-medium">{u.name || "Unknown User"}</span>
                     <Circle
                       size={8}
                       className="fill-green-500 text-green-500"
@@ -183,7 +183,7 @@ function UserCard({
               className="w-full h-full object-cover"
             />
           ) : (
-            profile.name[0]?.toUpperCase()
+            profile.name?.[0]?.toUpperCase() || "?"
           )}
         </div>
         {profile.isOnline && (
@@ -192,7 +192,7 @@ function UserCard({
       </div>
       <div className="flex-1">
         <div className="flex items-center gap-2">
-          <span className="font-bold">{profile.name}</span>
+          <span className="font-bold">{profile.name || "Unknown User"}</span>
         </div>
         <span className="text-sm text-zinc-500">{profile.email}</span>
       </div>
