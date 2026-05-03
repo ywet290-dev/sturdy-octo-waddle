@@ -128,6 +128,7 @@ export default function CreatePostPage() {
             </button>
           </div>
         </form>
+        </div>
       </div>
     </div>
   );
