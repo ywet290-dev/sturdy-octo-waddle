@@ -16,7 +16,6 @@ function CommentThread({
   userId,
   userName,
   userVotes,
-  isAdmin,
   depth,
 }: {
   comment: Doc<"comments">;
@@ -215,7 +214,6 @@ function PostCard({
   userId,
   userName,
   userVotes,
-  isAdmin,
 }: {
   post: Doc<"posts">;
   userId: string;

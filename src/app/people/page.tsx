@@ -33,7 +33,7 @@ export default function PeoplePage() {
 
   if (!user) return null;
 
-  const contactIds = contacts?.map((c: Doc<"users">) => c.clerkId) ?? [];
+  const contactIds = contacts?.filter((c: Doc<"users">) => c.clerkId).map((c: Doc<"users">) => c.clerkId as string) ?? [];
 
   const handleMessage = (targetId: string) => {
     // Send an empty "started conversation" or just navigate
@@ -68,7 +68,7 @@ export default function PeoplePage() {
             </h2>
             <div className="flex flex-wrap gap-3">
               {onlineUsers
-                ?.filter((u: Doc<"users">) => u.clerkId !== user.id)
+                ?.filter((u: Doc<"users">) => u.clerkId && u.clerkId !== user.id)
                 .map((u: Doc<"users">) => (
                   <div
                     key={u._id}
@@ -92,7 +92,7 @@ export default function PeoplePage() {
                     />
                   </div>
                 ))}
-              {onlineUsers?.filter((u: Doc<"users">) => u.clerkId !== user.id)
+              {onlineUsers?.filter((u: Doc<"users">) => u.clerkId && u.clerkId !== user.id)
                 .length === 0 && (
                 <p className="text-sm text-zinc-500">
                   No one else is online right now.
@@ -112,9 +112,9 @@ export default function PeoplePage() {
                   key={u._id}
                   profile={u}
                   isContact={true}
-                  onMessage={() => handleMessage(u.clerkId)}
+                  onMessage={() => u.clerkId && handleMessage(u.clerkId)}
                   onToggleContact={() =>
-                    removeContact({
+                    u.clerkId && removeContact({
                       myClerkId: user.id,
                       contactClerkId: u.clerkId,
                     })
@@ -132,14 +132,15 @@ export default function PeoplePage() {
           </h2>
           <div className="space-y-2">
             {results
-              ?.filter((u: Doc<"users">) => u.clerkId !== user.id)
+              ?.filter((u: Doc<"users">) => u.clerkId && u.clerkId !== user.id)
               .map((u: Doc<"users">) => (
                 <UserCard
                   key={u._id}
                   profile={u}
-                  isContact={contactIds.includes(u.clerkId)}
-                  onMessage={() => handleMessage(u.clerkId)}
+                  isContact={!!u.clerkId && contactIds.includes(u.clerkId)}
+                  onMessage={() => u.clerkId && handleMessage(u.clerkId)}
                   onToggleContact={() => {
+                    if (!u.clerkId) return;
                     if (contactIds.includes(u.clerkId)) {
                       removeContact({
                         myClerkId: user.id,

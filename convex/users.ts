@@ -62,8 +62,8 @@ export const searchUsers = query({
     const lower = args.query.toLowerCase();
     return allUsers.filter(
       (u) =>
-        u.name.toLowerCase().includes(lower) ||
-        u.email.toLowerCase().includes(lower)
+        (u.name && u.name.toLowerCase().includes(lower)) ||
+        (u.email && u.email.toLowerCase().includes(lower))
     );
   },
 });
@@ -118,9 +118,10 @@ export const addContact = mutation({
       .withIndex("by_clerkId", (q) => q.eq("clerkId", args.myClerkId))
       .first();
     if (!me) throw new Error("User not found");
-    if (me.contacts.includes(args.contactClerkId)) return;
+    const contacts = me.contacts || [];
+    if (contacts.includes(args.contactClerkId)) return;
     await ctx.db.patch(me._id, {
-      contacts: [...me.contacts, args.contactClerkId],
+      contacts: [...contacts, args.contactClerkId],
     });
   },
 });
@@ -134,8 +135,9 @@ export const removeContact = mutation({
       .withIndex("by_clerkId", (q) => q.eq("clerkId", args.myClerkId))
       .first();
     if (!me) throw new Error("User not found");
+    const contacts = me.contacts || [];
     await ctx.db.patch(me._id, {
-      contacts: me.contacts.filter((c) => c !== args.contactClerkId),
+      contacts: contacts.filter((c) => c !== args.contactClerkId),
     });
   },
 });
@@ -150,7 +152,8 @@ export const getContacts = query({
       .first();
     if (!me) return [];
     const contacts = [];
-    for (const cId of me.contacts) {
+    const myContacts = me.contacts || [];
+    for (const cId of myContacts) {
       const u = await ctx.db
         .query("users")
         .withIndex("by_clerkId", (q) => q.eq("clerkId", cId))
