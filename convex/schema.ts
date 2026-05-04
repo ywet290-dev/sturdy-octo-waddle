@@ -24,7 +24,8 @@ export default defineSchema({
     authorName: v.string(),
     upvotes: v.number(),
     downvotes: v.number(),
-  }).index("by_upvotes", ["upvotes"]),
+  }).index("by_upvotes", ["upvotes"])
+    .index("by_author", ["authorId"]),
 
   comments: defineTable({
     text: v.string(),
@@ -34,7 +35,8 @@ export default defineSchema({
     authorName: v.string(),
     upvotes: v.number(),
     downvotes: v.number(),
-  }).index("by_post", ["postId"]),
+  }).index("by_post", ["postId"])
+    .index("by_author", ["authorId"]),
 
   votes: defineTable({
     userId: v.string(),

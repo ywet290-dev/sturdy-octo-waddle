@@ -26,6 +26,17 @@ export const getPosts = query({
   },
 });
 
+export const getPostsByAuthor = query({
+  args: { authorId: v.string() },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("posts")
+      .withIndex("by_author", (q) => q.eq("authorId", args.authorId))
+      .order("desc")
+      .collect();
+  },
+});
+
 export const getPopularPosts = query({
   args: {},
   handler: async (ctx) => {

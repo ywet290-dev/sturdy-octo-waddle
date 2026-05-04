@@ -28,6 +28,16 @@ export const getCommentsForPost = query({
   },
 });
 
+export const getCommentsByAuthor = query({
+  args: { authorId: v.string() },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("comments")
+      .withIndex("by_author", (q) => q.eq("authorId", args.authorId))
+      .collect();
+  },
+});
+
 // Vote on a comment — same per-user logic as posts
 export const voteComment = mutation({
   args: {

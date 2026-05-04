@@ -11,6 +11,7 @@ import {
   Search,
   MessageCircle,
   Users,
+  User,
 } from "lucide-react";
 
 export default function TopBar() {
@@ -91,6 +92,13 @@ export default function TopBar() {
           title="People"
         >
           <Users size={20} />
+        </Link>
+        <Link
+          href="/profile"
+          className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors text-zinc-600 dark:text-zinc-400"
+          title="Profile"
+        >
+          <User size={20} />
         </Link>
         <UserButton />
       </div>
