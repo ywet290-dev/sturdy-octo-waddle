@@ -5,7 +5,7 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { Doc } from "../../../convex/_generated/dataModel";
 import { useUser } from "@clerk/nextjs";
-import { Send, ArrowLeft } from "lucide-react";
+import { Send, ArrowLeft, ShieldAlert, ChevronDown, ChevronUp } from "lucide-react";
 import TopBar from "@/components/TopBar";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
@@ -16,6 +16,7 @@ function MessagesContent() {
   const [selectedPartner, setSelectedPartner] = useState<string | null>(null);
   const [selectedPartnerName, setSelectedPartnerName] = useState<string | null>(null);
   const [messageText, setMessageText] = useState("");
+  const [showBlocked, setShowBlocked] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Initialize selectedPartner from URL if present
@@ -38,6 +39,11 @@ function MessagesContent() {
     user && selectedPartner
       ? { userId1: user.id, userId2: selectedPartner }
       : "skip"
+  );
+
+  const blockedUsers = useQuery(
+    api.users.getBlockedUsers,
+    user ? { clerkId: user.id } : "skip"
   );
 
   const sendMessage = useMutation(api.messages.sendMessage);
@@ -71,6 +77,11 @@ function MessagesContent() {
     (c) => c.partnerId === selectedPartner
   );
 
+  const blockedUserIds = blockedUsers?.map(u => u.clerkId) || [];
+  
+  const normalConversations = conversations?.filter(c => !blockedUserIds.includes(c.partnerId)) || [];
+  const blockedConversations = conversations?.filter(c => blockedUserIds.includes(c.partnerId)) || [];
+
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
       <TopBar />
@@ -88,7 +99,7 @@ function MessagesContent() {
                 No conversations yet. Visit a profile to start chatting!
               </p>
             )}
-            {conversations?.map((convo) => (
+            {normalConversations.map((convo) => (
               <button
                 key={convo.partnerId}
                 onClick={() => setSelectedPartner(convo.partnerId)}
@@ -127,6 +138,56 @@ function MessagesContent() {
                 </div>
               </button>
             ))}
+
+            {blockedConversations.length > 0 && (
+              <div className="mt-4 border-t border-zinc-200 dark:border-zinc-800">
+                <button
+                  onClick={() => setShowBlocked(!showBlocked)}
+                  className="w-full p-4 flex items-center justify-between text-sm font-bold text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors"
+                >
+                  <span className="flex items-center gap-2">
+                    <ShieldAlert size={16} /> Blocked Messages ({blockedConversations.length})
+                  </span>
+                  {showBlocked ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                </button>
+
+                {showBlocked && (
+                  <div className="bg-zinc-50 dark:bg-zinc-900/50">
+                    {blockedConversations.map((convo) => (
+                      <button
+                        key={convo.partnerId}
+                        onClick={() => setSelectedPartner(convo.partnerId)}
+                        className={`w-full p-4 flex items-center gap-3 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors text-left opacity-75 ${selectedPartner === convo.partnerId ? "bg-zinc-200 dark:bg-zinc-800 opacity-100" : ""}`}
+                      >
+                        <div className="relative">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-zinc-400 to-zinc-500 flex items-center justify-center text-white font-bold text-sm overflow-hidden grayscale">
+                            {convo.partnerImage ? (
+                              <img
+                                src={convo.partnerImage}
+                                alt=""
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              convo.partnerName?.[0]?.toUpperCase() || "?"
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex justify-between items-center">
+                            <span className="font-medium text-sm truncate text-zinc-600 dark:text-zinc-400">
+                              {convo.partnerName || "Unknown User"}
+                            </span>
+                          </div>
+                          <p className="text-xs text-zinc-500 truncate">
+                            {convo.lastMessage}
+                          </p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
 

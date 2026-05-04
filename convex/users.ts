@@ -25,6 +25,8 @@ export const upsertUser = mutation({
         isOnline: true,
         lastSeen: Date.now(),
         contacts: existing.contacts ?? [],
+        isPrivate: existing.isPrivate ?? false,
+        blockedUsers: existing.blockedUsers ?? [],
       });
       return existing._id;
     }
@@ -38,6 +40,8 @@ export const upsertUser = mutation({
       isOnline: true,
       lastSeen: Date.now(),
       contacts: [],
+      isPrivate: false,
+      blockedUsers: [],
     });
   },
 });
@@ -174,6 +178,75 @@ export const updateProfileImage = mutation({
       .first();
     if (!user) throw new Error("User not found");
     await ctx.db.patch(user._id, { profileImageUrl: args.profileImageUrl });
+  },
+});
+
+// Toggle privacy mode
+export const togglePrivacy = mutation({
+  args: { clerkId: v.string() },
+  handler: async (ctx, args) => {
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerkId", (q) => q.eq("clerkId", args.clerkId))
+      .first();
+    if (!user) throw new Error("User not found");
+    await ctx.db.patch(user._id, { isPrivate: !user.isPrivate });
+  },
+});
+
+// Block user
+export const blockUser = mutation({
+  args: { myClerkId: v.string(), targetClerkId: v.string() },
+  handler: async (ctx, args) => {
+    const me = await ctx.db
+      .query("users")
+      .withIndex("by_clerkId", (q) => q.eq("clerkId", args.myClerkId))
+      .first();
+    if (!me) throw new Error("User not found");
+    const blockedUsers = me.blockedUsers || [];
+    if (!blockedUsers.includes(args.targetClerkId)) {
+      await ctx.db.patch(me._id, {
+        blockedUsers: [...blockedUsers, args.targetClerkId],
+      });
+    }
+  },
+});
+
+// Unblock user
+export const unblockUser = mutation({
+  args: { myClerkId: v.string(), targetClerkId: v.string() },
+  handler: async (ctx, args) => {
+    const me = await ctx.db
+      .query("users")
+      .withIndex("by_clerkId", (q) => q.eq("clerkId", args.myClerkId))
+      .first();
+    if (!me) throw new Error("User not found");
+    const blockedUsers = me.blockedUsers || [];
+    await ctx.db.patch(me._id, {
+      blockedUsers: blockedUsers.filter((id) => id !== args.targetClerkId),
+    });
+  },
+});
+
+// Get blocked users
+export const getBlockedUsers = query({
+  args: { clerkId: v.string() },
+  handler: async (ctx, args) => {
+    const me = await ctx.db
+      .query("users")
+      .withIndex("by_clerkId", (q) => q.eq("clerkId", args.clerkId))
+      .first();
+    if (!me || !me.blockedUsers) return [];
+    
+    const blocked = [];
+    for (const id of me.blockedUsers) {
+      const u = await ctx.db
+        .query("users")
+        .withIndex("by_clerkId", (q) => q.eq("clerkId", id))
+        .first();
+      if (u) blocked.push(u);
+    }
+    return blocked;
   },
 });
 

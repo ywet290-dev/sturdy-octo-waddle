@@ -7,12 +7,12 @@ import { useUser } from "@clerk/nextjs";
 import TopBar from "@/components/TopBar";
 import { PostCard } from "@/components/PostCard";
 import { CommentThread } from "@/components/CommentThread";
-import { FileText, MessageSquare } from "lucide-react";
+import { FileText, MessageSquare, Settings, ShieldAlert, Lock, Unlock } from "lucide-react";
 import { Doc } from "../../../convex/_generated/dataModel";
 
 export default function ProfilePage() {
   const { user, isLoaded } = useUser();
-  const [activeTab, setActiveTab] = useState<"posts" | "comments">("posts");
+  const [activeTab, setActiveTab] = useState<"posts" | "comments" | "settings">("posts");
 
   const myPosts = useQuery(
     api.posts.getPostsByAuthor,
@@ -28,6 +28,19 @@ export default function ProfilePage() {
     api.posts.getUserVotes,
     user ? { userId: user.id } : "skip"
   );
+
+  const convexUser = useQuery(
+    api.users.getUser,
+    user ? { clerkId: user.id } : "skip"
+  );
+
+  const blockedUsers = useQuery(
+    api.users.getBlockedUsers,
+    user ? { clerkId: user.id } : "skip"
+  );
+
+  const togglePrivacy = useMutation(api.users.togglePrivacy);
+  const unblockUser = useMutation(api.users.unblockUser);
 
   if (!isLoaded || !user) return null;
 
@@ -88,6 +101,15 @@ export default function ProfilePage() {
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-purple-600 dark:bg-purple-400 rounded-t-full" />
             )}
           </button>
+          <button
+            onClick={() => setActiveTab("settings")}
+            className={`flex items-center gap-2 pb-3 px-2 text-sm font-bold transition-colors relative ${activeTab === "settings" ? "text-red-600 dark:text-red-400" : "text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200"}`}
+          >
+            <Settings size={18} /> Settings
+            {activeTab === "settings" && (
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-red-600 dark:bg-red-400 rounded-t-full" />
+            )}
+          </button>
         </div>
 
         {/* Content Area */}
@@ -146,6 +168,73 @@ export default function ProfilePage() {
                   </div>
                 </div>
               )}
+            </div>
+          )}
+
+          {activeTab === "settings" && (
+            <div className="space-y-6">
+              {/* Privacy Toggle */}
+              <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-6 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-bold flex items-center gap-2">
+                      {convexUser?.isPrivate ? <Lock className="text-red-500" size={20} /> : <Unlock className="text-green-500" size={20} />}
+                      Private Mode
+                    </h3>
+                    <p className="text-sm text-zinc-500 mt-1">
+                      When enabled, only your contacts can see your posts and profile details.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => user && togglePrivacy({ clerkId: user.id })}
+                    className={`px-4 py-2 rounded-full font-bold text-sm transition-colors ${
+                      convexUser?.isPrivate
+                        ? "bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-500/30"
+                        : "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700"
+                    }`}
+                  >
+                    {convexUser?.isPrivate ? "Enabled" : "Disabled"}
+                  </button>
+                </div>
+              </div>
+
+              {/* Blocked Users */}
+              <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-6 shadow-sm">
+                <h3 className="text-lg font-bold flex items-center gap-2 mb-4">
+                  <ShieldAlert className="text-red-500" size={20} />
+                  Blocked Users
+                </h3>
+                {blockedUsers === undefined ? (
+                  <p className="text-sm text-zinc-500 animate-pulse">Loading...</p>
+                ) : blockedUsers.length === 0 ? (
+                  <p className="text-sm text-zinc-500">You haven't blocked anyone.</p>
+                ) : (
+                  <div className="divide-y divide-zinc-100 dark:divide-zinc-800 border border-zinc-100 dark:border-zinc-800 rounded-lg overflow-hidden">
+                    {blockedUsers.map((u: Doc<"users">) => (
+                      <div key={u._id} className="p-4 flex items-center justify-between bg-zinc-50 dark:bg-zinc-900/50">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-red-400 to-orange-500 flex items-center justify-center text-white font-bold overflow-hidden">
+                            {u.profileImageUrl ? (
+                              <img src={u.profileImageUrl} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              u.name?.[0]?.toUpperCase() || "?"
+                            )}
+                          </div>
+                          <div>
+                            <p className="font-bold text-sm">{u.name || "Unknown User"}</p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => user && u.clerkId && unblockUser({ myClerkId: user.id, targetClerkId: u.clerkId })}
+                          className="px-3 py-1.5 text-xs font-bold text-zinc-600 bg-white border border-zinc-200 rounded-lg hover:bg-zinc-50 dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-700 transition-colors"
+                        >
+                          Unblock
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>

@@ -22,11 +22,13 @@ export function PostCard({
   post,
   userId,
   userName,
+  userImageUrl,
   userVotes,
 }: {
   post: Doc<"posts">;
   userId: string;
   userName: string;
+  userImageUrl?: string;
   userVotes: Doc<"votes">[];
 }) {
   const [showComments, setShowComments] = useState(false);
@@ -50,8 +52,14 @@ export function PostCard({
   const score = post.upvotes - post.downvotes;
   const isAuthor = post.authorId === userId;
 
-  // Get only top-level comments (no parent)
-  const topLevelComments = comments?.filter((c) => !c.parentCommentId) ?? [];
+  const convexUser = useQuery(
+    api.users.getUser,
+    userId ? { clerkId: userId } : "skip"
+  );
+  const blockedUserIds = convexUser?.blockedUsers || [];
+
+  // Filter out top-level comments from users the current user has blocked
+  const topLevelComments = comments?.filter((c) => !c.parentCommentId && !blockedUserIds.includes(c.authorId)) ?? [];
 
   const handleAddComment = async () => {
     if (!commentText.trim()) return;
@@ -60,6 +68,7 @@ export function PostCard({
       postId: post._id,
       authorId: userId,
       authorName: userName,
+      authorProfileImageUrl: userImageUrl,
     });
     setCommentText("");
   };
@@ -220,6 +229,7 @@ export function PostCard({
                 postId={post._id}
                 userId={userId}
                 userName={userName}
+                userImageUrl={userImageUrl}
                 userVotes={userVotes}
                 depth={0}
               />

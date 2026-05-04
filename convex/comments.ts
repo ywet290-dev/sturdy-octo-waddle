@@ -8,6 +8,7 @@ export const createComment = mutation({
     parentCommentId: v.optional(v.id("comments")),
     authorId: v.string(),
     authorName: v.string(),
+    authorProfileImageUrl: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     return await ctx.db.insert("comments", {

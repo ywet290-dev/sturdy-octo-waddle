@@ -11,6 +11,8 @@ export default defineSchema({
     isOnline: v.optional(v.boolean()),
     lastSeen: v.optional(v.number()),
     contacts: v.optional(v.array(v.string())), // array of clerkIds
+    isPrivate: v.optional(v.boolean()),
+    blockedUsers: v.optional(v.array(v.string())), // array of clerkIds
   })
     .index("by_clerkId", ["clerkId"])
     .index("by_email", ["email"])
@@ -33,6 +35,7 @@ export default defineSchema({
     parentCommentId: v.optional(v.id("comments")),
     authorId: v.string(),
     authorName: v.string(),
+    authorProfileImageUrl: v.optional(v.string()),
     upvotes: v.number(),
     downvotes: v.number(),
   }).index("by_post", ["postId"])
