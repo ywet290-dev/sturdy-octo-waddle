@@ -102,7 +102,7 @@ export default function PublicProfilePage() {
           <div className="flex-1 text-center md:text-left">
             <h1 className="text-3xl font-bold mb-2 flex items-center justify-center md:justify-start gap-2">
               {profileUser.name || "Anonymous User"}
-              {profileUser.isPrivate && <Lock size={18} className="text-zinc-400" title="Private Profile" />}
+              {profileUser.isPrivate && <span title="Private Profile"><Lock size={18} className="text-zinc-400" /></span>}
             </h1>
             <p className="text-zinc-500 mb-4 flex items-center justify-center md:justify-start gap-2">
               {profileUser.email}
