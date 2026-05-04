@@ -51,6 +51,7 @@ export default function HomePage() {
                 post={post}
                 userId={userId}
                 userName={userName}
+                userImageUrl={user?.imageUrl}
                 userVotes={userVotes ?? []}
               />
             ))

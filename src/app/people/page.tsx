@@ -11,6 +11,8 @@ import {
   UserPlus,
   UserMinus,
   Circle,
+  ShieldBan,
+  ShieldCheck,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import TopBar from "@/components/TopBar";
@@ -26,17 +28,27 @@ export default function PeoplePage() {
     api.users.getContacts,
     user ? { clerkId: user.id } : "skip"
   );
+  const currentUserData = useQuery(
+    api.users.getUser,
+    user ? { clerkId: user.id } : "skip"
+  );
 
   const addContact = useMutation(api.users.addContact);
   const removeContact = useMutation(api.users.removeContact);
-  const sendMessage = useMutation(api.messages.sendMessage);
+  const blockUser = useMutation(api.users.blockUser);
+  const unblockUser = useMutation(api.users.unblockUser);
 
   if (!user) return null;
 
   const contactIds = contacts?.filter((c: Doc<"users">) => c.clerkId).map((c: Doc<"users">) => c.clerkId as string) ?? [];
+  const blockedIds = currentUserData?.blockedUsers ?? [];
 
   const handleMessage = (targetId: string, targetName: string) => {
     router.push(`/messages?chat=${targetId}&name=${encodeURIComponent(targetName)}`);
+  };
+
+  const handleProfile = (clerkId: string) => {
+    router.push(`/profile/${clerkId}`);
   };
 
   return (
@@ -71,7 +83,8 @@ export default function PeoplePage() {
                 .map((u: Doc<"users">) => (
                   <div
                     key={u._id}
-                    className="flex items-center gap-2 bg-white dark:bg-zinc-900 px-4 py-2 rounded-full border border-zinc-200 dark:border-zinc-800"
+                    onClick={() => u.clerkId && handleProfile(u.clerkId)}
+                    className="flex items-center gap-2 bg-white dark:bg-zinc-900 px-4 py-2 rounded-full border border-zinc-200 dark:border-zinc-800 cursor-pointer hover:border-blue-400 transition-colors"
                   >
                     <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-[10px] font-bold overflow-hidden">
                       {u.profileImageUrl ? (
@@ -111,6 +124,8 @@ export default function PeoplePage() {
                   key={u._id}
                   profile={u}
                   isContact={true}
+                  isBlocked={!!u.clerkId && blockedIds.includes(u.clerkId)}
+                  onProfile={() => u.clerkId && handleProfile(u.clerkId)}
                   onMessage={() => u.clerkId && handleMessage(u.clerkId, u.name || "Unknown User")}
                   onToggleContact={() =>
                     u.clerkId && removeContact({
@@ -118,6 +133,14 @@ export default function PeoplePage() {
                       contactClerkId: u.clerkId,
                     })
                   }
+                  onToggleBlock={() => {
+                    if (!u.clerkId) return;
+                    if (blockedIds.includes(u.clerkId)) {
+                      unblockUser({ myClerkId: user.id, targetClerkId: u.clerkId });
+                    } else {
+                      blockUser({ myClerkId: user.id, targetClerkId: u.clerkId });
+                    }
+                  }}
                 />
               ))}
             </div>
@@ -137,6 +160,8 @@ export default function PeoplePage() {
                   key={u._id}
                   profile={u}
                   isContact={!!u.clerkId && contactIds.includes(u.clerkId)}
+                  isBlocked={!!u.clerkId && blockedIds.includes(u.clerkId)}
+                  onProfile={() => u.clerkId && handleProfile(u.clerkId)}
                   onMessage={() => u.clerkId && handleMessage(u.clerkId, u.name || "Unknown User")}
                   onToggleContact={() => {
                     if (!u.clerkId) return;
@@ -152,6 +177,14 @@ export default function PeoplePage() {
                       });
                     }
                   }}
+                  onToggleBlock={() => {
+                    if (!u.clerkId) return;
+                    if (blockedIds.includes(u.clerkId)) {
+                      unblockUser({ myClerkId: user.id, targetClerkId: u.clerkId });
+                    } else {
+                      blockUser({ myClerkId: user.id, targetClerkId: u.clerkId });
+                    }
+                  }}
                 />
               ))}
           </div>
@@ -164,17 +197,24 @@ export default function PeoplePage() {
 function UserCard({
   profile,
   isContact,
+  isBlocked,
+  onProfile,
   onMessage,
   onToggleContact,
+  onToggleBlock,
 }: {
   profile: Doc<"users">;
   isContact: boolean;
+  isBlocked: boolean;
+  onProfile: () => void;
   onMessage: () => void;
   onToggleContact: () => void;
+  onToggleBlock: () => void;
 }) {
   return (
     <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-4 flex items-center gap-4">
-      <div className="relative">
+      {/* Clickable avatar */}
+      <div className="relative cursor-pointer" onClick={onProfile}>
         <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white font-bold overflow-hidden">
           {profile.profileImageUrl ? (
             <img
@@ -190,9 +230,11 @@ function UserCard({
           <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-white dark:border-zinc-900" />
         )}
       </div>
-      <div className="flex-1">
+      {/* Clickable name */}
+      <div className="flex-1 cursor-pointer" onClick={onProfile}>
         <div className="flex items-center gap-2">
-          <span className="font-bold">{profile.name || "Unknown User"}</span>
+          <span className="font-bold hover:text-blue-500 transition-colors">{profile.name || "Unknown User"}</span>
+          {isBlocked && <span className="text-[10px] px-1.5 py-0.5 bg-red-100 text-red-500 dark:bg-red-500/10 rounded-full font-bold">Blocked</span>}
         </div>
         <span className="text-sm text-zinc-500">{profile.email}</span>
       </div>
@@ -200,16 +242,20 @@ function UserCard({
         <button
           onClick={onMessage}
           className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors text-blue-500"
-          title="Send Message"
         >
           <MessageCircle size={18} />
         </button>
         <button
           onClick={onToggleContact}
           className={`p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors ${isContact ? "text-red-500" : "text-green-500"}`}
-          title={isContact ? "Remove Contact" : "Add Contact"}
         >
           {isContact ? <UserMinus size={18} /> : <UserPlus size={18} />}
+        </button>
+        <button
+          onClick={onToggleBlock}
+          className={`p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors ${isBlocked ? "text-red-500" : "text-zinc-400 hover:text-red-500"}`}
+        >
+          {isBlocked ? <ShieldCheck size={18} /> : <ShieldBan size={18} />}
         </button>
       </div>
     </div>

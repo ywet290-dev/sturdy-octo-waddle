@@ -132,6 +132,7 @@ export default function ProfilePage() {
                     post={post}
                     userId={user.id}
                     userName={user.fullName || user.username || "Anonymous"}
+                    userImageUrl={user.imageUrl}
                     userVotes={userVotes}
                   />
                 ))

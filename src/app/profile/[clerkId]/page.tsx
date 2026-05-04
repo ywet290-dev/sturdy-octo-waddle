@@ -187,6 +187,7 @@ export default function PublicProfilePage() {
                       post={post}
                       userId={currentUser?.id || ""}
                       userName={currentUser?.fullName || currentUser?.username || "Anonymous"}
+                      userImageUrl={currentUser?.imageUrl}
                       userVotes={userVotes}
                     />
                   ))}
