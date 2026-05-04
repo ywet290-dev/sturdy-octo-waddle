@@ -99,7 +99,7 @@ export function CommentThread({
         {/* Comment content */}
         <div className="flex-1">
           <div className="flex justify-between items-start">
-            <div className="flex items-center gap-2 mb-1">
+            <a href={`/profile/${comment.authorId}`} className="flex items-center gap-2 mb-1 hover:opacity-80 transition-opacity cursor-pointer">
               <div className="w-5 h-5 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-[10px] font-bold overflow-hidden">
                 {comment.authorProfileImageUrl ? (
                   <img src={comment.authorProfileImageUrl} alt="" className="w-full h-full object-cover" />
@@ -107,10 +107,10 @@ export function CommentThread({
                   comment.authorName?.[0]?.toUpperCase() || "?"
                 )}
               </div>
-              <p className="text-xs text-zinc-500 font-medium">
+              <p className="text-xs text-zinc-500 font-medium hover:text-blue-500 transition-colors">
                 {comment.authorName}
               </p>
-            </div>
+            </a>
             <div className="flex gap-2">
               {isAuthor && (
                 <button

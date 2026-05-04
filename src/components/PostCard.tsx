@@ -177,7 +177,7 @@ export function PostCard({
           )}
 
           <div className="flex items-center gap-4 text-sm text-zinc-500">
-            <span>Posted by {post.authorName}</span>
+            <span>Posted by <a href={`/profile/${post.authorId}`} className="font-medium hover:text-blue-500 hover:underline transition-colors cursor-pointer">{post.authorName}</a></span>
             <button
               onClick={() => setShowComments(!showComments)}
               className="flex items-center gap-1 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors"
