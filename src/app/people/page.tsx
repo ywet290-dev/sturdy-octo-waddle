@@ -35,9 +35,8 @@ export default function PeoplePage() {
 
   const contactIds = contacts?.filter((c: Doc<"users">) => c.clerkId).map((c: Doc<"users">) => c.clerkId as string) ?? [];
 
-  const handleMessage = (targetId: string) => {
-    // Send an empty "started conversation" or just navigate
-    router.push(`/messages?chat=${targetId}`);
+  const handleMessage = (targetId: string, targetName: string) => {
+    router.push(`/messages?chat=${targetId}&name=${encodeURIComponent(targetName)}`);
   };
 
   return (
@@ -112,7 +111,7 @@ export default function PeoplePage() {
                   key={u._id}
                   profile={u}
                   isContact={true}
-                  onMessage={() => u.clerkId && handleMessage(u.clerkId)}
+                  onMessage={() => u.clerkId && handleMessage(u.clerkId, u.name || "Unknown User")}
                   onToggleContact={() =>
                     u.clerkId && removeContact({
                       myClerkId: user.id,
@@ -138,7 +137,7 @@ export default function PeoplePage() {
                   key={u._id}
                   profile={u}
                   isContact={!!u.clerkId && contactIds.includes(u.clerkId)}
-                  onMessage={() => u.clerkId && handleMessage(u.clerkId)}
+                  onMessage={() => u.clerkId && handleMessage(u.clerkId, u.name || "Unknown User")}
                   onToggleContact={() => {
                     if (!u.clerkId) return;
                     if (contactIds.includes(u.clerkId)) {

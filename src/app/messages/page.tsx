@@ -7,12 +7,26 @@ import { Doc } from "../../../convex/_generated/dataModel";
 import { useUser } from "@clerk/nextjs";
 import { Send, ArrowLeft } from "lucide-react";
 import TopBar from "@/components/TopBar";
+import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 
-export default function MessagesPage() {
+function MessagesContent() {
   const { user } = useUser();
+  const searchParams = useSearchParams();
   const [selectedPartner, setSelectedPartner] = useState<string | null>(null);
+  const [selectedPartnerName, setSelectedPartnerName] = useState<string | null>(null);
   const [messageText, setMessageText] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Initialize selectedPartner from URL if present
+  useEffect(() => {
+    const chatParam = searchParams.get("chat");
+    const nameParam = searchParams.get("name");
+    if (chatParam) {
+      setSelectedPartner(chatParam);
+      if (nameParam) setSelectedPartnerName(nameParam);
+    }
+  }, [searchParams]);
 
   const conversations = useQuery(
     api.messages.getConversations,
@@ -148,7 +162,7 @@ export default function MessagesPage() {
                 </div>
                 <div>
                   <h3 className="font-bold text-sm">
-                    {selectedConvo?.partnerName || "Unknown User"}
+                    {selectedConvo?.partnerName || selectedPartnerName || "Unknown User"}
                   </h3>
                   <p className="text-xs text-zinc-500">
                     {selectedConvo?.partnerOnline ? "Online" : "Offline"}
@@ -202,5 +216,13 @@ export default function MessagesPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function MessagesPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-zinc-50 dark:bg-zinc-950"><TopBar /></div>}>
+      <MessagesContent />
+    </Suspense>
   );
 }
